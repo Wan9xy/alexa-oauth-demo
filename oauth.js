@@ -1,4 +1,4 @@
-var oauth2orize = require('oauth2orize'); 
+var oauth2orize = require('oauth2orize');
 var OAuth = require('./models/oauth');
 
 var server = oauth2orize.createServer();
@@ -35,6 +35,7 @@ server.grant(oauth2orize.grant.code({
 	// });
 }));
 
+//更换token的主流程，使用clientID clientSecret 和AuthCode去拿到实际的userID 生成指定实效内的token返回给alexa
 server.exchange(oauth2orize.exchange.code({
 	userProperty: 'appl'
 }, function(application, code, redirectURI, done) {
@@ -94,6 +95,7 @@ server.exchange(oauth2orize.exchange.code({
 	});
 }));
 
+//用已过期或即将过期的token来请求刷新
 server.exchange(oauth2orize.exchange.refreshToken({
 	userProperty: 'appl'
 }, function(application, token, scope, done){
@@ -118,7 +120,7 @@ server.exchange(oauth2orize.exchange.refreshToken({
 						}
 					});
 				} else {
-					done(error,null);	
+					done(error,null);
 				}
 			});
 		} else {

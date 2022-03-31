@@ -34,6 +34,7 @@ var mongoose_options = {
 		}
 	}
 };
+//mongodb logs
 var mongoose_connection = mongoose.connection;
 
 mongoose_connection.on('connecting', function() {
@@ -48,7 +49,7 @@ mongoose_connection.on('error', function(error) {
 mongoose_connection.on('connected', function() {
     console.log('MongoDB connected!');
 });
-  
+
 mongoose_connection.once('open', function() {
     console.log('MongoDB connection opened!');
 });
@@ -102,7 +103,7 @@ function requireHTTPS(req, res, next) {
         	url += ':' + port;
         }
         url  += req.url;
-        return res.redirect(url); 
+        return res.redirect(url);
     }
     next();
 }
@@ -121,7 +122,7 @@ passport.deserializeUser(Account.deserializeUser());
 var accessTokenStrategy = new PassportOAuthBearer(function(token, done) {
 	console.log("accessTokenStrategy: %s", token);
 	oauthModels.AccessToken.findOne({ token: token }).populate('user').populate('grant').exec(function(error, token) {
-		
+
 		if (token && token.active && token.grant.active && token.user) {
 			// console.log("Token is GOOD!");
 			console.log("db token: %j", token);
@@ -150,14 +151,17 @@ function ensureAuthenticated(req,res,next) {
 	}
 }
 
+//主页
 app.get('/', function(req,res){
-	res.render('pages/index', {user: req.user, home: true});	
+	res.render('pages/index', {user: req.user, home: true});
 });
 
+//登录页
 app.get('/login', function(req,res){
 	res.render('pages/login',{user: req.user, message: req.flash('error')});
 });
 
+//注销
 app.get('/logout', function(req,res){
 	req.logout();
 	if(req.query.next) {
@@ -168,6 +172,7 @@ app.get('/logout', function(req,res){
 });
 
 //app.post('/login',passport.authenticate('local', { failureRedirect: '/login', successRedirect: '/2faCheck', failureFlash: true }));
+//登录操作
 app.post('/login',
 	passport.authenticate('local', { failureRedirect: '/login', failureFlash: true }),
 	function(req,res){
@@ -178,13 +183,15 @@ app.post('/login',
 		}
 	});
 
+//注册用户页面
 app.get('/newuser', function(req,res){
 	res.render('pages/register', {user: req.user,})
 });
 
+//注册用户
 app.post('/newuser', function(req,res){
 	Account.register(
-		new Account({ username : req.body.username, email: req.body.email, mqttPass: "foo" }), 
+		new Account({ username : req.body.username, email: req.body.email, mqttPass: "foo" }),
 		req.body.password, function(err, account) {
 		if (err) {
 			console.log(err);
@@ -199,6 +206,7 @@ app.post('/newuser', function(req,res){
 	});
 });
 
+//主auth流程开始。并把收到的uri输出至console
 app.get('/auth/start',oauthServer.authorize(function(applicationID, redirectURI,done){
 	oauthModels.Application.findOne({ oauth_id: applicationID }, function(error, application) {
 		if (application) {
@@ -210,6 +218,7 @@ app.get('/auth/start',oauthServer.authorize(function(applicationID, redirectURI,
 					break;
 				}
 			}
+			//对redirect_uri 和 appID 等必要信息进行判断
 			if (match && redirectURI && redirectURI.length > 0) {
 				done(null, application, redirectURI);
 			} else {
@@ -227,7 +236,7 @@ app.get('/auth/start',oauthServer.authorize(function(applicationID, redirectURI,
 		access_devices: 'access you devices',
 		create_devices: 'create new devices'
 	};
-
+	//这个位置需要跳转回alexa
 	res.render('pages/oauth', {
 		transaction_id: req.oauth2.transactionID,
 		currentURL: encodeURIComponent(req.originalUrl),
@@ -240,6 +249,7 @@ app.get('/auth/start',oauthServer.authorize(function(applicationID, redirectURI,
 	});
 });
 
+//登录流程验证
 app.post('/auth/finish',function(req,res,next) {
 	//console.log("/auth/finish user: ", req.user);
 	if (req.user) {
@@ -265,7 +275,7 @@ app.post('/auth/finish',function(req,res,next) {
 	done(null, { scope: req.oauth2.req.scope });
 }));
 
-
+//返回给Alexa的授权码交换可用的accessToken
 app.post('/auth/exchange',function(req,res,next){
 	var appID = req.body['client_id'];
 	var appSecret = req.body['client_secret'];
@@ -298,6 +308,7 @@ app.post('/command',
 	}
 );
 
+//注册服务和clientId
 app.put('/services',
 	function(req,res,next) {
 		console.log("hmm put");
@@ -367,6 +378,6 @@ server.listen(port, host, function(){
 	console.log("App_ID -> %s", app_id);
 
 	setTimeout(function(){
-		
+
 	},5000);
 });
